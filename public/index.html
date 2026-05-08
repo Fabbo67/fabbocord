@@ -4,7 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>FabboCord</title>
-<script src="/socket.io/socket.io.js"></script>
+<script>
+// Carica socket.io solo se siamo su un server (non file://)
+(function(){
+  if(location.protocol !== "file:"){
+    var s = document.createElement("script");
+    s.src = "/socket.io/socket.io.js";
+    document.head.appendChild(s);
+  }
+})();
+</script>
 <style>
 :root{--bg:#313338;--dark:#1e1f22;--side:#2b2d31;--input:#383a40;--txt:#f2f3f5;--mut:#949ba4;--brand:#5865f2;--green:#23a55a;--red:#f23f42;--hov:#404249;--pink:#f23f67}
 *{box-sizing:border-box}
@@ -73,11 +82,14 @@ button,input{font:inherit}
 .flabel,.tlabel{position:absolute;left:10px;bottom:10px;background:#000a;border-radius:6px;padding:6px 9px;font-size:13px}.tiles{display:flex;flex-direction:column;gap:10px;overflow:auto}.tile{height:150px;background:#050607;border:2px solid transparent;border-radius:10px;overflow:hidden;position:relative;display:grid;place-items:center;color:var(--mut);cursor:pointer;text-align:center}.tile:hover{border-color:#4e5058}.tile.active{border-color:var(--brand)}.tile video{width:100%;height:100%;object-fit:cover}.tile.screen video{object-fit:contain}
 .controls{background:#1e1f22;border-top:1px solid #292b30;display:flex;align-items:center;justify-content:center;gap:10px}.controls button{border:0;border-radius:999px;height:44px;padding:0 18px;color:white;font-weight:900;cursor:pointer;background:#3b3d44}.controls .on{background:var(--green)}.controls .brand{background:var(--brand)}.controls .red{background:var(--red)}audio{display:none}
 .toast-wrap{position:fixed;right:18px;bottom:18px;z-index:999;display:grid;gap:10px}.toast{width:min(360px,calc(100vw - 36px));background:#1e1f22;border:1px solid #3f4147;border-left:4px solid var(--brand);box-shadow:0 12px 40px #0008;border-radius:10px;padding:13px 14px}.toast.err{border-left-color:var(--red)}.toast p{margin:0;color:#b5bac1}
+.offline-banner{display:none;background:#1e1f22;border:1px solid #f23f42;color:#f2f3f5;font-size:12px;padding:6px 14px;text-align:center}
+.offline-banner.show{display:block}
 @media(max-width:1000px){.app{grid-template-columns:72px 260px 1fr}.members{display:none}.stage{grid-template-columns:1fr}.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-height:220px}}
 @media(max-width:720px){.app{grid-template-columns:72px 1fr}.guild{display:none}}
 </style>
 </head>
 <body>
+
 <div class="login" id="login">
   <div class="login-card">
     <h1>Entra in FabboCord</h1>
@@ -85,7 +97,7 @@ button,input{font:inherit}
     <div class="avatar-preview" id="loginAvatar">U</div>
     <input id="nameInput" type="text" placeholder="Nome utente" onkeydown="if(event.key==='Enter')join()">
     <input class="file-input" type="file" id="avatarInput" accept="image/*">
-    <button class="main-btn" id="enterBtn" onclick="join()">Entra</button>
+    <button class="main-btn" id="enterBtn">Entra</button>
   </div>
 </div>
 
@@ -96,13 +108,14 @@ button,input{font:inherit}
     <input id="editName" type="text" placeholder="Nome utente">
     <input class="file-input" type="file" id="editAvatarInput" accept="image/*">
     <div class="modal-actions">
-      <button class="ghost" id="cancelProfileBtn" onclick="closeProfile()">Annulla</button>
-      <button id="saveProfileBtn" onclick="saveProfile()">Salva</button>
+      <button class="ghost" id="cancelProfileBtn">Annulla</button>
+      <button id="saveProfileBtn">Salva</button>
     </div>
   </div>
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
+<div class="offline-banner" id="offlineBanner">⚠️ Modalità offline — connessione al server non disponibile. Le funzioni di chat multipla e voce richiedono un server Node.js.</div>
 
 <div class="app">
   <aside class="serverbar"><div class="server">S</div></aside>
@@ -128,13 +141,23 @@ button,input{font:inherit}
         </div>
       </div>
     </div>
-    <div class="profile" id="profileBox"><div class="av" id="pav">U</div><div><b id="pname">Utente</b><br><small style="color:#949ba4">Modifica profilo</small></div></div>
+    <div class="profile" id="profileBox">
+      <div class="av" id="pav">U</div>
+      <div><b id="pname">Utente</b><br><small style="color:#949ba4">Modifica profilo</small></div>
+    </div>
   </aside>
 
   <main class="chat">
     <div class="top"><span># generale</span><span style="color:#949ba4;font-size:13px">/help · /meme · /game</span></div>
-    <section class="messages" id="messages"><div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div></section>
-    <div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()"><button id="sendBtn" onclick="sendMessage()">Invia</button></div></div>
+    <section class="messages" id="messages">
+      <div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div>
+    </section>
+    <div class="composer">
+      <div class="box">
+        <input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()">
+        <button id="sendBtn">Invia</button>
+      </div>
+    </div>
   </main>
 
   <aside class="members">
@@ -144,19 +167,76 @@ button,input{font:inherit}
 </div>
 
 <section class="call" id="call">
-  <div class="calltop"><b>🔊 Vocale</b><button id="closeCallBtn" onclick="closeCall()">Torna alla chat</button></div>
-  <div class="stage"><div class="focus" id="focus">Clicca su una webcam o condivisione per ingrandirla</div><div class="tiles" id="tiles"></div></div>
+  <div class="calltop"><b>🔊 Vocale</b><button id="closeCallBtn">Torna alla chat</button></div>
+  <div class="stage">
+    <div class="focus" id="focus">Clicca su una webcam o condivisione per ingrandirla</div>
+    <div class="tiles" id="tiles"></div>
+  </div>
   <div class="controls">
-    <button id="micBtn" onclick="toggleMic()">🎙️ Mic</button>
-    <button id="camBtn" onclick="toggleCam()">📷 Cam</button>
-    <button id="screenBtn" class="brand" onclick="toggleScreen()">🖥️ Schermo</button>
-    <button class="red" id="stopBtn" onclick="stopAll()">Esci</button>
+    <button id="micBtn">🎙️ Mic</button>
+    <button id="camBtn">📷 Cam</button>
+    <button id="screenBtn" class="brand">🖥️ Schermo</button>
+    <button class="red" id="stopBtn">Esci</button>
   </div>
 </section>
 
 <script>
-const socket = io();
+// ─── Socket mock (attivo solo se socket.io non è disponibile) ───────────────
+function createMockSocket(){
+  const handlers = {};
+  const mock = {
+    _isOffline: true,
+    emit(event, data){
+      // Simula risposta locale per eventi base
+      if(event === "join"){
+        const fakeId = "local-" + Math.random().toString(36).slice(2,8);
+        setTimeout(()=>{
+          if(handlers["me"]) handlers["me"].forEach(fn=>fn(fakeId));
+          if(handlers["users"]) handlers["users"].forEach(fn=>fn([{
+            id: fakeId,
+            name: data.name || "Utente",
+            avatar: data.avatar || "",
+            inVoice: false, inCall: false, mic: false, cam: false, screen: false
+          }]));
+        }, 50);
+      }
+      if(event === "message"){
+        setTimeout(()=>{
+          if(handlers["message"]) handlers["message"].forEach(fn=>fn({
+            id: "local",
+            name: myName,
+            text: data,
+            time: now(),
+            avatar: myAvatar
+          }));
+        }, 30);
+      }
+    },
+    on(event, fn){
+      if(!handlers[event]) handlers[event] = [];
+      handlers[event].push(fn);
+    }
+  };
+  return mock;
+}
 
+// Inizializza socket: reale se disponibile, mock se no
+let socket;
+function initSocket(){
+  if(typeof io !== "undefined"){
+    try{
+      socket = io();
+      bindSocketEvents();
+      return;
+    }catch(e){}
+  }
+  // Nessun server disponibile → mock offline
+  socket = createMockSocket();
+  document.getElementById("offlineBanner").classList.add("show");
+  bindSocketEvents();
+}
+
+// ─── Stato globale ──────────────────────────────────────────────────────────
 let savedProfile = {};
 try { savedProfile = JSON.parse(localStorage.getItem("fc_profile") || "{}"); } catch(e) { savedProfile = {}; }
 
@@ -174,6 +254,7 @@ let inVoice = false;
 
 const rtc = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
+// ─── Utility ─────────────────────────────────────────────────────────────────
 function $(id){ return document.getElementById(id); }
 function safe(t){ return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function ini(n){ return String(n || "?").trim().slice(0,2).toUpperCase(); }
@@ -186,16 +267,16 @@ function userAvatarHtml(u, cls="miniav"){ return avatarHtml(u.name, u.avatar, cl
 function chatAvatarHtml(name, avatar){ return avatarHtml(name, avatar, "msgav"); }
 function renderAvatar(el, name, avatar){ el.innerHTML = avatar ? `<img src="${avatar}" alt="">` : safe(ini(name)); }
 
-function toast(title,msg,type=""){
+function toast(title, msg, type=""){
   const el = document.createElement("div");
   el.className = "toast " + type;
   el.innerHTML = `<b>${safe(title)}</b><p>${safe(msg)}</p>`;
   $("toastWrap").appendChild(el);
-  setTimeout(()=>el.remove(),4300);
+  setTimeout(()=>el.remove(), 4300);
 }
 
 function compressImage(file){
-  return new Promise((resolve,reject)=>{
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
     reader.onerror = reject;
     reader.onload = () => {
@@ -208,8 +289,8 @@ function compressImage(file){
         canvas.width = Math.max(1, Math.round(img.width * scale));
         canvas.height = Math.max(1, Math.round(img.height * scale));
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        resolve(canvas.toDataURL("image/jpeg",0.82));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
       };
       img.src = reader.result;
     };
@@ -223,13 +304,16 @@ function saveLocalProfile(){
   localStorage.setItem("fc_profile", JSON.stringify({name: myName, avatar: myAvatar}));
 }
 
+// ─── UI Profilo ──────────────────────────────────────────────────────────────
 function initProfileUI(){
-  $("nameInput").value = myName;
+  $("nameInput").value = myName !== "Utente" ? myName : "";
   $("pname").textContent = myName;
   renderAvatar($("loginAvatar"), myName, myAvatar);
   renderAvatar($("pav"), myName, myAvatar);
 
-  $("nameInput").addEventListener("input", () => renderAvatar($("loginAvatar"), $("nameInput").value || "Utente", myAvatar));
+  $("nameInput").addEventListener("input", () =>
+    renderAvatar($("loginAvatar"), $("nameInput").value || "Utente", myAvatar)
+  );
 
   $("avatarInput").addEventListener("change", async (e)=>{
     const file = e.target.files && e.target.files[0];
@@ -250,16 +334,18 @@ function initProfileUI(){
   });
 }
 
+// ─── Join ────────────────────────────────────────────────────────────────────
 function join(){
   myName = ($("nameInput").value || "Utente").trim() || "Utente";
   saveLocalProfile();
   $("login").style.display = "none";
   $("pname").textContent = myName;
   renderAvatar($("pav"), myName, myAvatar);
-  socket.emit("join",{name:myName,avatar:myAvatar});
+  socket.emit("join", {name: myName, avatar: myAvatar});
   bot("Sei entrato. Avatar e nome ora funzionano in chat, online e vocale.");
 }
 
+// ─── Profilo modale ──────────────────────────────────────────────────────────
 function openProfile(){
   $("editName").value = myName;
   renderAvatar($("editAvatar"), myName, myAvatar);
@@ -271,16 +357,19 @@ function saveProfile(){
   saveLocalProfile();
   $("pname").textContent = myName;
   renderAvatar($("pav"), myName, myAvatar);
-  socket.emit("profile-update",{name:myName,avatar:myAvatar});
+  socket.emit("profile-update", {name: myName, avatar: myAvatar});
   closeProfile();
   toast("Profilo aggiornato","Nome e immagine sono stati salvati.");
 }
 
-function add(name,text,time=now(),avatar=""){
-  $("messages").insertAdjacentHTML("beforeend",`<div class="msg">${chatAvatarHtml(name,avatar)}<div><span class="name">${safe(name)}</span><span class="time">${safe(time)}</span><div class="text">${text}</div></div></div>`);
+// ─── Messaggi ────────────────────────────────────────────────────────────────
+function add(name, text, time=now(), avatar=""){
+  $("messages").insertAdjacentHTML("beforeend",
+    `<div class="msg">${chatAvatarHtml(name,avatar)}<div><span class="name">${safe(name)}</span><span class="time">${safe(time)}</span><div class="text">${text}</div></div></div>`
+  );
   $("messages").scrollTop = $("messages").scrollHeight;
 }
-function bot(t){ add("FabboBot",t,now(),""); }
+function bot(t){ add("FabboBot", t, now(), ""); }
 function sys(t){
   $("messages").insertAdjacentHTML("beforeend",`<div class="sys">${safe(t)}</div>`);
   $("messages").scrollTop = $("messages").scrollHeight;
@@ -289,23 +378,26 @@ function sendMessage(){
   const input = $("messageInput");
   const t = input.value.trim();
   if(!t) return;
-  socket.emit("message",t);
+  socket.emit("message", t);
   input.value = "";
 }
 function handleBot(t){
   t = t.toLowerCase();
   if(t==="/help") bot("Clicca sul profilo in basso a sinistra per cambiare nome/avatar.");
-  if(t==="/meme") bot("Ora il login non si bugga più 😭");
+  if(t==="/meme") bot("Ora il login non si bugga più 😎");
   if(t==="/game") bot("Mic + cam + screen e si gioca 🎮");
 }
 
+// ─── Utenti ──────────────────────────────────────────────────────────────────
 function renderUsers(){
   $("mt").textContent = `ONLINE — ${users.length}`;
   $("ml").innerHTML = "";
   $("voiceList").innerHTML = "";
 
   users.forEach(u=>{
-    const status = (u.inVoice || u.inCall) ? '<span class="member-status live">IN VOCALE</span>' : '<span class="member-status online-dot">●</span>';
+    const status = (u.inVoice || u.inCall)
+      ? '<span class="member-status live">IN VOCALE</span>'
+      : '<span class="member-status online-dot">●</span>';
     $("ml").insertAdjacentHTML("beforeend",`
       <div class="discord-member">
         ${userAvatarHtml(u,"memberav")}
@@ -330,53 +422,97 @@ function renderUsers(){
   });
 }
 
+// ─── Chiamata / Voce ─────────────────────────────────────────────────────────
 function updateCallState(){
   socket.emit("call-state",{inVoice:!!inVoice,mic:!!micStream,cam:!!camStream,screen:!!screenStream});
 }
 function setSideButton(id,on){ const el=$(id); if(el) el.classList.toggle("on",on); }
-function openCall(){ inVoice = true; $("call").classList.add("active"); $("voiceCard").classList.add("active"); updateCallState(); }
+function openCall(){ inVoice=true; $("call").classList.add("active"); $("voiceCard").classList.add("active"); updateCallState(); }
 function closeCall(){ $("call").classList.remove("active"); updateCallState(); }
 
-socket.on("me", id => myId = id);
-socket.on("users", list => {
-  users = Array.isArray(list) ? list : [];
-  renderUsers();
-  users.forEach(u=>{ if(u.id !== myId && hasMedia()) ensurePeer(u.id,u.name); });
-});
-socket.on("system", sys);
-socket.on("message", m => {
-  add(m.name || "Utente", safe(m.text || ""), m.time || now(), m.avatar || "");
-  if(m.id === myId) handleBot(m.text || "");
-});
-socket.on("user-left", id => {
-  if(peers[id]){ peers[id].close(); delete peers[id]; }
-  document.querySelectorAll(`[data-peer="${id}"]`).forEach(e=>e.remove());
-  if(focused && !document.getElementById(focused)) focusFirst();
-});
-socket.on("signal", async ({from,name,data}) => {
-  const pc = ensurePeer(from,name);
+async function startMic(){
+  openCall();
+  if(micStream) return;
   try{
-    if(data.description){
-      const collision = data.description.type === "offer" && (makingOffer[from] || pc.signalingState !== "stable");
-      const polite = myId && from > myId;
-      if(collision && !polite) return;
-      if(collision){
-        await Promise.all([pc.setLocalDescription({type:"rollback"}), pc.setRemoteDescription(data.description)]);
-      }else{
-        await pc.setRemoteDescription(data.description);
-      }
-      if(data.description.type === "offer"){
-        await pc.setLocalDescription(await pc.createAnswer());
-        socket.emit("signal",{to:from,data:{description:pc.localDescription}});
-      }
-    }
-    if(data.candidate) await pc.addIceCandidate(data.candidate).catch(()=>{});
-  }catch(e){
-    console.warn(e);
-    toast("Errore chiamata","Connessione instabile, riprova.","err");
-  }
-});
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+    micStream.getTracks().forEach(t=>{ addToAll(t,micStream); t.onended=stopMic; });
+    $("micBtn").classList.add("on"); setSideButton("sideMicBtn",true);
+    sys("Microfono acceso"); updateCallState();
+  }catch(e){ toast("Microfono bloccato","Consenti il microfono dal browser e riprova.","err"); }
+}
+async function stopMic(){
+  if(!micStream) return;
+  const s = micStream;
+  await removeStream(s);
+  s.getTracks().forEach(t=>t.stop());
+  micStream = null;
+  $("micBtn").classList.remove("on"); setSideButton("sideMicBtn",false);
+  sys("Microfono spento"); updateCallState();
+}
+async function startCam(){
+  openCall();
+  if(camStream) return;
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    camStream.getTracks().forEach(t=>{ addToAll(t,camStream); t.onended=stopCam; });
+    renderTile("local-cam","local","La tua webcam",camStream,false);
+    $("camBtn").classList.add("on"); setSideButton("sideCamBtn",true);
+    sys("Webcam accesa"); updateCallState();
+  }catch(e){ toast("Webcam bloccata","Consenti la webcam dal browser e riprova.","err"); }
+}
+async function stopCam(){
+  if(!camStream) return;
+  const s = camStream;
+  await removeStream(s);
+  s.getTracks().forEach(t=>t.stop());
+  camStream = null;
+  $("camBtn").classList.remove("on"); setSideButton("sideCamBtn",false);
+  document.getElementById("local-cam")?.remove();
+  focusFirst(); sys("Webcam spenta"); updateCallState();
+}
+async function startScreen(){
+  openCall();
+  if(screenStream) return;
+  try{
+    screenStream = await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+    screenStream.getTracks().forEach(t=>{ addToAll(t,screenStream); t.onended=stopScreen; });
+    renderTile("local-screen","local","Il tuo schermo",screenStream,true);
+    $("screenBtn").classList.add("on"); setSideButton("sideScreenBtn",true);
+    sys("Condivisione attiva"); updateCallState();
+  }catch(e){ toast("Condivisione annullata","Non hai scelto uno schermo da condividere.","err"); }
+}
+async function stopScreen(){
+  if(!screenStream) return;
+  const s = screenStream;
+  await removeStream(s);
+  s.getTracks().forEach(t=>t.stop());
+  screenStream = null;
+  $("screenBtn").classList.remove("on"); setSideButton("sideScreenBtn",false);
+  document.getElementById("local-screen")?.remove();
+  focusFirst(); sys("Condivisione chiusa"); updateCallState();
+}
+function toggleMic(){ micStream ? stopMic() : startMic(); }
+function toggleCam(){ camStream ? stopCam() : startCam(); }
+function toggleScreen(){ screenStream ? stopScreen() : startScreen(); }
+async function stopAll(){
+  if(micStream) await stopMic();
+  if(camStream) await stopCam();
+  if(screenStream) await stopScreen();
+  Object.values(peers).forEach(p=>p.close());
+  peers = {};
+  document.querySelectorAll("[data-peer]").forEach(e=>e.remove());
+  document.querySelectorAll("audio").forEach(e=>e.remove());
+  $("tiles").innerHTML = "";
+  focused = null;
+  focusFirst();
+  $("voiceCard").classList.remove("active");
+  $("call").classList.remove("active");
+  inVoice = false;
+  updateCallState();
+  sys("Sei uscito dalla chiamata");
+}
 
+// ─── WebRTC ──────────────────────────────────────────────────────────────────
 function hasMedia(){ return !!(micStream || camStream || screenStream); }
 function tracks(){
   const a=[];
@@ -470,93 +606,52 @@ function focusFirst(){
   else $("focus").textContent = "Clicca su una webcam o condivisione per ingrandirla";
 }
 
-async function startMic(){
-  openCall();
-  if(micStream) return;
-  try{
-    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
-    micStream.getTracks().forEach(t=>{ addToAll(t,micStream); t.onended=stopMic; });
-    $("micBtn").classList.add("on"); setSideButton("sideMicBtn",true);
-    sys("Microfono acceso"); updateCallState();
-  }catch(e){ toast("Microfono bloccato","Consenti il microfono dal browser e riprova.","err"); }
-}
-async function stopMic(){
-  if(!micStream) return;
-  const s = micStream;
-  await removeStream(s);
-  s.getTracks().forEach(t=>t.stop());
-  micStream = null;
-  $("micBtn").classList.remove("on"); setSideButton("sideMicBtn",false);
-  sys("Microfono spento"); updateCallState();
-}
-async function startCam(){
-  openCall();
-  if(camStream) return;
-  try{
-    camStream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
-    camStream.getTracks().forEach(t=>{ addToAll(t,camStream); t.onended=stopCam; });
-    renderTile("local-cam","local","La tua webcam",camStream,false);
-    $("camBtn").classList.add("on"); setSideButton("sideCamBtn",true);
-    sys("Webcam accesa"); updateCallState();
-  }catch(e){ toast("Webcam bloccata","Consenti la webcam dal browser e riprova.","err"); }
-}
-async function stopCam(){
-  if(!camStream) return;
-  const s = camStream;
-  await removeStream(s);
-  s.getTracks().forEach(t=>t.stop());
-  camStream = null;
-  $("camBtn").classList.remove("on"); setSideButton("sideCamBtn",false);
-  document.getElementById("local-cam")?.remove();
-  focusFirst(); sys("Webcam spenta"); updateCallState();
-}
-async function startScreen(){
-  openCall();
-  if(screenStream) return;
-  try{
-    screenStream = await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
-    screenStream.getTracks().forEach(t=>{ addToAll(t,screenStream); t.onended=stopScreen; });
-    renderTile("local-screen","local","Il tuo schermo",screenStream,true);
-    $("screenBtn").classList.add("on"); setSideButton("sideScreenBtn",true);
-    sys("Condivisione attiva"); updateCallState();
-  }catch(e){ toast("Condivisione annullata","Non hai scelto uno schermo da condividere.","err"); }
-}
-async function stopScreen(){
-  if(!screenStream) return;
-  const s = screenStream;
-  await removeStream(s);
-  s.getTracks().forEach(t=>t.stop());
-  screenStream = null;
-  $("screenBtn").classList.remove("on"); setSideButton("sideScreenBtn",false);
-  document.getElementById("local-screen")?.remove();
-  focusFirst(); sys("Condivisione chiusa"); updateCallState();
-}
-function toggleMic(){ micStream ? stopMic() : startMic(); }
-function toggleCam(){ camStream ? stopCam() : startCam(); }
-function toggleScreen(){ screenStream ? stopScreen() : startScreen(); }
-async function stopAll(){
-  if(micStream) await stopMic();
-  if(camStream) await stopCam();
-  if(screenStream) await stopScreen();
-  Object.values(peers).forEach(p=>p.close());
-  peers = {};
-  document.querySelectorAll("[data-peer]").forEach(e=>e.remove());
-  document.querySelectorAll("audio").forEach(e=>e.remove());
-  $("tiles").innerHTML = "";
-  focused = null;
-  focusFirst();
-  $("voiceCard").classList.remove("active");
-  $("call").classList.remove("active");
-  inVoice = false;
-  updateCallState();
-  sys("Sei uscito dalla chiamata");
+// ─── Eventi socket ────────────────────────────────────────────────────────────
+function bindSocketEvents(){
+  socket.on("me", id => myId = id);
+  socket.on("users", list => {
+    users = Array.isArray(list) ? list : [];
+    renderUsers();
+    users.forEach(u=>{ if(u.id !== myId && hasMedia()) ensurePeer(u.id,u.name); });
+  });
+  socket.on("system", sys);
+  socket.on("message", m => {
+    add(m.name || "Utente", safe(m.text || ""), m.time || now(), m.avatar || "");
+    if(m.id === myId) handleBot(m.text || "");
+  });
+  socket.on("user-left", id => {
+    if(peers[id]){ peers[id].close(); delete peers[id]; }
+    document.querySelectorAll(`[data-peer="${id}"]`).forEach(e=>e.remove());
+    if(focused && !document.getElementById(focused)) focusFirst();
+  });
+  socket.on("signal", async ({from,name,data}) => {
+    const pc = ensurePeer(from,name);
+    try{
+      if(data.description){
+        const collision = data.description.type === "offer" && (makingOffer[from] || pc.signalingState !== "stable");
+        const polite = myId && from > myId;
+        if(collision && !polite) return;
+        if(collision){
+          await Promise.all([pc.setLocalDescription({type:"rollback"}), pc.setRemoteDescription(data.description)]);
+        }else{
+          await pc.setRemoteDescription(data.description);
+        }
+        if(data.description.type === "offer"){
+          await pc.setLocalDescription(await pc.createAnswer());
+          socket.emit("signal",{to:from,data:{description:pc.localDescription}});
+        }
+      }
+      if(data.candidate) await pc.addIceCandidate(data.candidate).catch(()=>{});
+    }catch(e){
+      console.warn(e);
+      toast("Errore chiamata","Connessione instabile, riprova.","err");
+    }
+  });
 }
 
-function on(id,event,fn){
-  const el = document.getElementById(id);
-  if(el) el.addEventListener(event,fn);
-}
+// ─── Binding UI ───────────────────────────────────────────────────────────────
 function bindEvents(){
+  const on = (id,event,fn) => { const el=document.getElementById(id); if(el) el.addEventListener(event,fn); };
   on("enterBtn","click",join);
   on("nameInput","keydown",e=>{ if(e.key==="Enter") join(); });
   on("sendBtn","click",sendMessage);
@@ -577,15 +672,22 @@ function bindEvents(){
   on("stopBtn","click",stopAll);
 }
 
+// ─── Avvio ────────────────────────────────────────────────────────────────────
 try{
   initProfileUI();
   bindEvents();
+  // Aspetta che socket.io si carichi (se presente) prima di inizializzare
+  if(location.protocol !== "file:" && typeof io === "undefined"){
+    window.addEventListener("load", () => {
+      setTimeout(initSocket, 200);
+    });
+  } else {
+    initSocket();
+  }
 }catch(e){
   console.error("Startup error:", e);
-  const t=document.getElementById("toastWrap");
-  if(t){
-    t.innerHTML='<div class="toast err"><b>Errore avvio</b><p>Ricarica la pagina o aggiorna il file index.html.</p></div>';
-  }
+  const t = document.getElementById("toastWrap");
+  if(t) t.innerHTML='<div class="toast err"><b>Errore avvio</b><p>Ricarica la pagina o aggiorna il file index.html.</p></div>';
 }
 </script>
 </body>
