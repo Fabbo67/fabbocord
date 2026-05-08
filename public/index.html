@@ -83,9 +83,9 @@ button,input{font:inherit}
     <h1>Entra in FabboCord</h1>
     <p>Scegli il tuo nome una volta: resterà salvato su questo dispositivo.</p>
     <div class="avatar-preview" id="loginAvatar">U</div>
-    <input id="nameInput" type="text" placeholder="Nome utente">
+    <input id="nameInput" type="text" placeholder="Nome utente" onkeydown="if(event.key==='Enter')join()">
     <input class="file-input" type="file" id="avatarInput" accept="image/*">
-    <button class="main-btn" id="enterBtn">Entra</button>
+    <button class="main-btn" id="enterBtn" onclick="join()">Entra</button>
   </div>
 </div>
 
@@ -96,8 +96,8 @@ button,input{font:inherit}
     <input id="editName" type="text" placeholder="Nome utente">
     <input class="file-input" type="file" id="editAvatarInput" accept="image/*">
     <div class="modal-actions">
-      <button class="ghost" id="cancelProfileBtn">Annulla</button>
-      <button id="saveProfileBtn">Salva</button>
+      <button class="ghost" id="cancelProfileBtn" onclick="closeProfile()">Annulla</button>
+      <button id="saveProfileBtn" onclick="saveProfile()">Salva</button>
     </div>
   </div>
 </div>
@@ -134,7 +134,7 @@ button,input{font:inherit}
   <main class="chat">
     <div class="top"><span># generale</span><span style="color:#949ba4;font-size:13px">/help · /meme · /game</span></div>
     <section class="messages" id="messages"><div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div></section>
-    <div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale"><button id="sendBtn">Invia</button></div></div>
+    <div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()"><button id="sendBtn" onclick="sendMessage()">Invia</button></div></div>
   </main>
 
   <aside class="members">
@@ -144,13 +144,13 @@ button,input{font:inherit}
 </div>
 
 <section class="call" id="call">
-  <div class="calltop"><b>🔊 Vocale</b><button id="closeCallBtn">Torna alla chat</button></div>
+  <div class="calltop"><b>🔊 Vocale</b><button id="closeCallBtn" onclick="closeCall()">Torna alla chat</button></div>
   <div class="stage"><div class="focus" id="focus">Clicca su una webcam o condivisione per ingrandirla</div><div class="tiles" id="tiles"></div></div>
   <div class="controls">
-    <button id="micBtn">🎙️ Mic</button>
-    <button id="camBtn">📷 Cam</button>
-    <button id="screenBtn" class="brand">🖥️ Schermo</button>
-    <button class="red" id="stopBtn">Esci</button>
+    <button id="micBtn" onclick="toggleMic()">🎙️ Mic</button>
+    <button id="camBtn" onclick="toggleCam()">📷 Cam</button>
+    <button id="screenBtn" class="brand" onclick="toggleScreen()">🖥️ Schermo</button>
+    <button class="red" id="stopBtn" onclick="stopAll()">Esci</button>
   </div>
 </section>
 
@@ -552,29 +552,41 @@ async function stopAll(){
   sys("Sei uscito dalla chiamata");
 }
 
+function on(id,event,fn){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(event,fn);
+}
 function bindEvents(){
-  $("enterBtn").addEventListener("click", join);
-  $("nameInput").addEventListener("keydown", e=>{ if(e.key==="Enter") join(); });
-  $("sendBtn").addEventListener("click", sendMessage);
-  $("messageInput").addEventListener("keydown", e=>{ if(e.key==="Enter") sendMessage(); });
-  $("profileBox").addEventListener("click", openProfile);
-  $("cancelProfileBtn").addEventListener("click", closeProfile);
-  $("saveProfileBtn").addEventListener("click", saveProfile);
-  $("voiceChannel").addEventListener("click", openCall);
-  $("disconnectBtn").addEventListener("click", stopAll);
-  $("sideCamBtn").addEventListener("click", toggleCam);
-  $("sideScreenBtn").addEventListener("click", toggleScreen);
-  $("sideOpenCallBtn").addEventListener("click", openCall);
-  $("sideMicBtn").addEventListener("click", toggleMic);
-  $("closeCallBtn").addEventListener("click", closeCall);
-  $("micBtn").addEventListener("click", toggleMic);
-  $("camBtn").addEventListener("click", toggleCam);
-  $("screenBtn").addEventListener("click", toggleScreen);
-  $("stopBtn").addEventListener("click", stopAll);
+  on("enterBtn","click",join);
+  on("nameInput","keydown",e=>{ if(e.key==="Enter") join(); });
+  on("sendBtn","click",sendMessage);
+  on("messageInput","keydown",e=>{ if(e.key==="Enter") sendMessage(); });
+  on("profileBox","click",openProfile);
+  on("cancelProfileBtn","click",closeProfile);
+  on("saveProfileBtn","click",saveProfile);
+  on("voiceChannel","click",openCall);
+  on("disconnectBtn","click",stopAll);
+  on("sideCamBtn","click",toggleCam);
+  on("sideScreenBtn","click",toggleScreen);
+  on("sideOpenCallBtn","click",openCall);
+  on("sideMicBtn","click",toggleMic);
+  on("closeCallBtn","click",closeCall);
+  on("micBtn","click",toggleMic);
+  on("camBtn","click",toggleCam);
+  on("screenBtn","click",toggleScreen);
+  on("stopBtn","click",stopAll);
 }
 
-initProfileUI();
-bindEvents();
+try{
+  initProfileUI();
+  bindEvents();
+}catch(e){
+  console.error("Startup error:", e);
+  const t=document.getElementById("toastWrap");
+  if(t){
+    t.innerHTML='<div class="toast err"><b>Errore avvio</b><p>Ricarica la pagina o aggiorna il file index.html.</p></div>';
+  }
+}
 </script>
 </body>
 </html>
