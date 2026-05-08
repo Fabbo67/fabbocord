@@ -16,6 +16,74 @@
 .call{position:fixed;inset:0;background:#111214;z-index:20;display:none;grid-template-rows:48px minmax(0,1fr) 72px}.call.active{display:grid}.calltop{height:48px;background:#1e1f22;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #292b30}.calltop button{background:#2b2d31;border:0;color:white;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:800}.stage{min-height:0;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:12px}.focus{background:#050607;border-radius:12px;border:1px solid #24262c;overflow:hidden;position:relative;display:grid;place-items:center;color:var(--mut);min-width:0}.focus video{width:100%;height:100%;object-fit:contain}.flabel,.tlabel{position:absolute;left:10px;bottom:10px;background:#000a;border-radius:6px;padding:6px 9px;font-size:13px}.tiles{display:flex;flex-direction:column;gap:10px;overflow:auto}.tile{height:150px;background:#050607;border:2px solid transparent;border-radius:10px;overflow:hidden;position:relative;display:grid;place-items:center;color:var(--mut);cursor:pointer;text-align:center}.tile:hover{border-color:#4e5058}.tile.active{border-color:var(--brand)}.tile video{width:100%;height:100%;object-fit:cover}.tile.screen video{object-fit:contain}.controls{background:#1e1f22;border-top:1px solid #292b30;display:flex;align-items:center;justify-content:center;gap:10px}.controls button{border:0;border-radius:999px;height:44px;padding:0 18px;color:white;font-weight:900;cursor:pointer;background:#3b3d44}.controls .on{background:var(--green)}.controls .brand{background:var(--brand)}.controls .red{background:var(--red)}audio{display:none}
 .toast-wrap{position:fixed;right:18px;bottom:18px;z-index:999;display:grid;gap:10px}.toast{width:min(360px,calc(100vw - 36px));background:#1e1f22;border:1px solid #3f4147;border-left:4px solid var(--brand);box-shadow:0 12px 40px #0008;border-radius:10px;padding:13px 14px;animation:pop .18s ease-out}.toast b{display:block;margin-bottom:3px}.toast p{margin:0;color:#b5bac1;font-size:14px;line-height:1.35}.toast.err{border-left-color:var(--red)}@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
 @media(max-width:1000px){.app{grid-template-columns:72px 260px 1fr}.members{display:none}.stage{grid-template-columns:1fr}.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-height:220px}}@media(max-width:720px){.app{grid-template-columns:72px 1fr}.guild{display:none}}
+
+.voice-list{
+  padding:2px 0 6px 22px !important;
+  min-height:0;
+}
+.voice-empty{
+  display:none;
+}
+.voice-user.discord-user{
+  height:32px;
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr) auto auto auto;
+  gap:7px;
+  align-items:center;
+  padding:3px 6px 3px 0;
+  color:#b5bac1;
+  border-radius:4px;
+}
+.voice-user.discord-user:hover{
+  background:#35373c;
+  color:white;
+}
+.voice-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.voice-mic{
+  color:#b5bac1;
+  font-size:12px;
+}
+.voice-mic.muted{
+  color:#80848e;
+}
+.voice-card{
+  margin-top:8px !important;
+}
+
+
+.member-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.online-dot{
+  color:#23a55a !important;
+  font-size:14px !important;
+}
+.members{
+  display:block;
+}
+.av img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
+}
+.msg .av{
+  width:40px;
+  height:40px;
+}
+.member .av{
+  width:34px;
+  height:34px;
+}
+
 </style></head><body>
 <div class="login" id="login"><div class="login-card"><h1>Bentornato su FabboCord</h1><p style="color:#949ba4">Link privato per i tuoi amici.</p><div class="avatar-preview" id="loginAvatar">F</div><input id="nameInput" value="fabbo67"><input type="file" id="avatarInput" accept="image/*"><button onclick="join()">Entra</button></div></div>
 <div class="profile-modal" id="profileModal"><div class="modal-card"><h2>Modifica profilo</h2><div class="avatar-preview" id="editAvatar">F</div><input id="editName" placeholder="Nome"><input type="file" id="editAvatarInput" accept="image/*"><div class="modal-actions"><button class="ghost" onclick="closeProfile()">Annulla</button><button onclick="saveProfile()">Salva</button></div></div></div>
@@ -23,7 +91,7 @@
 <div class="app"><aside class="serverbar"><div class="server">S</div></aside><aside class="guild"><div class="head"><span class="lock">🔒</span><div><div>server</div><small style="color:#949ba4;font-weight:400">Imposta uno stato del canale ✎</small></div></div><div class="channels"><div class="cat">Canali testuali</div><div class="channel active"># generale</div><div class="cat">Canali vocali</div><div class="channel" onclick="openCall()">🔊 Vocale</div><div class="voice-list" id="voiceList"></div><div class="voice-card" id="voiceCard"><div class="voice-connected"><div class="signal-icon">≋</div><div><div class="voice-green">Connesso al canale vocale</div><div class="voice-room">🔊 Vocale</div></div><button class="mini-icon" onclick="stopAll()" title="Disconnetti">☎</button></div><div class="voice-actions"><button id="sideCamBtn" onclick="toggleCam()" title="Webcam">📷</button><button id="sideScreenBtn" onclick="toggleScreen()" title="Condividi schermo">🖥️</button><button onclick="openCall()" title="Apri chiamata">✦</button><button id="sideMicBtn" onclick="toggleMic()" title="Microfono">🎙️</button></div></div></div><div class="profile" onclick="openProfile()"><div class="av" id="pav">F</div><div><b id="pname">fabbo67</b><br><small style="color:#949ba4">Modifica profilo</small></div></div></aside><main class="chat"><div class="top"><span># generale</span><span style="color:#949ba4;font-size:13px">/help · /meme · /game</span></div><section class="messages" id="messages"><div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div></section><div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">Invia</button></div></div></main><aside class="members"><div class="cat" id="mt">Online — 0</div><div id="ml"></div></aside></div>
 <section class="call" id="call"><div class="calltop"><b>🔊 Vocale</b><button onclick="closeCall()">Torna alla chat</button></div><div class="stage"><div class="focus" id="focus">Clicca su una webcam o condivisione per ingrandirla</div><div class="tiles" id="tiles"></div></div><div class="controls"><button id="micBtn" onclick="toggleMic()">🎙️ Mic</button><button id="camBtn" onclick="toggleCam()">📷 Cam</button><button id="screenBtn" class="brand" onclick="toggleScreen()">🖥️ Schermo</button><button class="red" onclick="stopAll()">Esci</button></div></section>
 <script>
-const socket=io();let myId=null,myName=localStorage.getItem('fc_name')||'fabbo67',myAvatar=localStorage.getItem('fc_avatar')||'',users=[],micStream=null,camStream=null,screenStream=null,peers={},makingOffer={},focused=null;const rtc={iceServers:[{urls:'stun:stun.l.google.com:19302'}]},messages=document.getElementById('messages');
+const socket=io();let myId=null,myName=localStorage.getItem('fc_name')||'fabbo67',myAvatar=localStorage.getItem('fc_avatar')||'',users=[],micStream=null,camStream=null,screenStream=null,peers={},makingOffer={},focused=null,inVoice=false;const rtc={iceServers:[{urls:'stun:stun.l.google.com:19302'}]},messages=document.getElementById('messages');
 nameInput.value=myName;renderAvatar(loginAvatar,myName,myAvatar);
 function safe(t){return String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}function ini(n){return String(n||'?').trim().slice(0,2).toUpperCase()}function now(){return new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}
 function renderAvatar(el,name,avatar){el.innerHTML=avatar?`<img src="${avatar}">`:safe(ini(name))}
@@ -31,18 +99,59 @@ function toast(title,msg,type=''){let el=document.createElement('div');el.classN
 function readImage(file,cb){if(!file)return;let r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(file)}
 avatarInput.onchange=e=>readImage(e.target.files[0],data=>{myAvatar=data;renderAvatar(loginAvatar,nameInput.value,myAvatar)})
 editAvatarInput.onchange=e=>readImage(e.target.files[0],data=>{myAvatar=data;renderAvatar(editAvatar,editName.value,myAvatar)})
-function updateCallState(){socket.emit('call-state',{inCall:!!(micStream||camStream||screenStream||call.classList.contains('active')),mic:!!micStream,cam:!!camStream,screen:!!screenStream})}
+function updateCallState(){socket.emit('call-state',{inVoice:!!inVoice,mic:!!micStream,cam:!!camStream,screen:!!screenStream})}
 function setSideButton(id,on){let el=document.getElementById(id);if(el)el.classList.toggle('on',on)}
-function join(){myName=nameInput.value.trim()||'Utente';localStorage.setItem('fc_name',myName);localStorage.setItem('fc_avatar',myAvatar);login.style.display='none';pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('join',{name:myName,avatar:myAvatar});bot('Server rinominato in <b>server</b>. Ora puoi modificare il profilo e vedere chi è in vocale.')}
+function join(){myName=nameInput.value.trim()||'Utente';localStorage.setItem('fc_name',myName);localStorage.setItem('fc_avatar',myAvatar);login.style.display='none';pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('join',{name:myName,avatar:myAvatar});bot('Server rinominato in <b>server</b>. Ora chat, avatar profilo e membri online sono sistemati.')}
 function openProfile(){editName.value=myName;renderAvatar(editAvatar,myName,myAvatar);profileModal.style.display='grid'}
 function closeProfile(){profileModal.style.display='none'}
 function saveProfile(){myName=editName.value.trim()||myName;localStorage.setItem('fc_name',myName);localStorage.setItem('fc_avatar',myAvatar);pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('profile-update',{name:myName,avatar:myAvatar});closeProfile();toast('Profilo aggiornato','Nome e immagine profilo salvati.')}
-function add(name,text,time=now()){messages.insertAdjacentHTML('beforeend',`<div class="msg"><div class="av">${safe(ini(name))}</div><div><span class="name">${safe(name)}</span><span class="time">${safe(time)}</span><div class="text">${text}</div></div></div>`);messages.scrollTop=messages.scrollHeight}function bot(t){add('FabboBot',t)}function sys(t){messages.insertAdjacentHTML('beforeend',`<div class="sys">${safe(t)}</div>`);messages.scrollTop=messages.scrollHeight}
+function chatAvatarHtml(name,avatar){
+  return avatar ? `<div class="av"><img src="${avatar}"></div>` : `<div class="av">${safe(ini(name))}</div>`;
+}
+function add(name,text,time=now(),avatar=''){
+  messages.insertAdjacentHTML('beforeend',`<div class="msg">${chatAvatarHtml(name,avatar)}<div><span class="name">${safe(name)}</span><span class="time">${safe(time)}</span><div class="text">${text}</div></div></div>`);
+  messages.scrollTop=messages.scrollHeight;
+}
+function bot(t){add('FabboBot',t,now(),'')}
+function sys(t){messages.insertAdjacentHTML('beforeend',`<div class="sys">${safe(t)}</div>`);messages.scrollTop=messages.scrollHeight}
 function sendMessage(){let i=messageInput,t=i.value.trim();if(!t)return;socket.emit('message',t);i.value=''}function handleBot(t){t=t.toLowerCase();if(t==='/help')bot('Clicca sul profilo in basso a sinistra per cambiare nome/avatar.');if(t==='/meme')bot('Ora il server si chiama server, fantasia 100 😭');if(t==='/game')bot('Mic + cam + screen e si gioca 🎮')}
 function userAvatarHtml(u,cls='miniav'){return `<span class="${cls}">${u.avatar?`<img src="${u.avatar}">`:safe(ini(u.name))}</span>`}
-function renderUsers(){mt.textContent=`Online — ${users.length}`;ml.innerHTML='';voiceList.innerHTML='';let inCall=users.filter(u=>u.inCall);users.forEach(u=>{ml.insertAdjacentHTML('beforeend',`<div class="member">${userAvatarHtml(u,'av')}<span>${safe(u.name)}${u.id===myId?' (tu)':''}</span>${u.inCall?'<span class="member-status">IN VOCALE</span>':''}</div>`)});if(inCall.length===0)voiceList.innerHTML='<div class="voice-empty">Nessuno in vocale</div>';inCall.forEach(u=>{voiceList.insertAdjacentHTML('beforeend',`<div class="voice-user">${userAvatarHtml(u)}<span>${safe(u.name)}</span>${u.cam?'<span class="code">CAM</span>':''}${u.screen?'<span class="badge">IN ONDA</span>':''}${u.mic&&!u.screen?'<span class="code">MIC</span>':''}</div>`)})}
-function openCall(){call.classList.add('active');voiceCard.classList.add('active');updateCallState()}function closeCall(){call.classList.remove('active');updateCallState()}
-socket.on('me',id=>myId=id);socket.on('users',list=>{users=list;renderUsers();users.forEach(u=>{if(u.id!==myId&&hasMedia())ensurePeer(u.id,u.name)})});socket.on('system',sys);socket.on('message',m=>{add(m.name,safe(m.text),m.time);if(m.id===myId)handleBot(m.text)});socket.on('user-left',id=>{if(peers[id]){peers[id].close();delete peers[id]}document.querySelectorAll(`[data-peer="${id}"]`).forEach(e=>e.remove());if(focused&&!document.getElementById(focused))focusFirst()});
+function renderUsers(){
+  mt.textContent=`Online — ${users.length}`;
+  ml.innerHTML='';
+  voiceList.innerHTML='';
+
+  users.forEach(u=>{
+    const status = (u.inVoice||u.inCall) ? '<span class="member-status">IN VOCALE</span>' : '<span class="member-status online-dot">●</span>';
+    ml.insertAdjacentHTML('beforeend',`
+      <div class="member">
+        ${userAvatarHtml(u,'av')}
+        <span class="member-name">${safe(u.name)}${u.id===myId?' (tu)':''}</span>
+        ${status}
+      </div>
+    `);
+  });
+
+  let inCall=users.filter(u=>u.inVoice||u.inCall);
+  if(inCall.length===0){
+    voiceList.innerHTML='<div class="voice-empty">Nessuno in vocale</div>';
+  }
+
+  inCall.forEach(u=>{
+    const live = u.screen ? '<span class="badge">IN ONDA</span>' : '';
+    const cam = u.cam ? '<span class="code">CAM</span>' : '';
+    const mic = u.mic ? '<span class="voice-mic">🎙️</span>' : '<span class="voice-mic muted">🔇</span>';
+    voiceList.insertAdjacentHTML('beforeend',`
+      <div class="voice-user discord-user">
+        ${userAvatarHtml(u)}
+        <span class="voice-name">${safe(u.name)}${u.id===myId?' (tu)':''}</span>
+        ${mic}${cam}${live}
+      </div>
+    `);
+  });
+}
+function openCall(){inVoice=true;call.classList.add('active');voiceCard.classList.add('active');updateCallState()}function closeCall(){call.classList.remove('active');updateCallState()}
+socket.on('me',id=>myId=id);socket.on('users',list=>{users=list;renderUsers();users.forEach(u=>{if(u.id!==myId&&hasMedia())ensurePeer(u.id,u.name)})});socket.on('system',sys);socket.on('message',m=>{add(m.name,safe(m.text),m.time,m.avatar||'');if(m.id===myId)handleBot(m.text)});socket.on('user-left',id=>{if(peers[id]){peers[id].close();delete peers[id]}document.querySelectorAll(`[data-peer="${id}"]`).forEach(e=>e.remove());if(focused&&!document.getElementById(focused))focusFirst()});
 socket.on('signal',async({from,name,data})=>{let pc=ensurePeer(from,name);try{if(data.description){let collision=data.description.type==='offer'&&(makingOffer[from]||pc.signalingState!=='stable'),polite=myId&&from>myId;if(collision&&!polite)return;if(collision)await Promise.all([pc.setLocalDescription({type:'rollback'}),pc.setRemoteDescription(data.description)]);else await pc.setRemoteDescription(data.description);if(data.description.type==='offer'){await pc.setLocalDescription(await pc.createAnswer());socket.emit('signal',{to:from,data:{description:pc.localDescription}})}}if(data.candidate)await pc.addIceCandidate(data.candidate).catch(()=>{})}catch(e){console.warn(e);toast('Errore chiamata','Connessione instabile, riprova tra poco.','err')}});
 function hasMedia(){return micStream||camStream||screenStream}function tracks(){let a=[];if(micStream)a.push(...micStream.getTracks());if(camStream)a.push(...camStream.getTracks());if(screenStream)a.push(...screenStream.getTracks());return a}function streamOf(t){if(micStream&&micStream.getTracks().includes(t))return micStream;if(camStream&&camStream.getTracks().includes(t))return camStream;return screenStream}
 function ensurePeer(id,name){if(peers[id])return peers[id];let pc=new RTCPeerConnection(rtc);peers[id]=pc;makingOffer[id]=false;tracks().forEach(t=>pc.addTrack(t,streamOf(t)));pc.onicecandidate=e=>{if(e.candidate)socket.emit('signal',{to:id,data:{candidate:e.candidate}})};pc.ontrack=e=>{openCall();let s=e.streams[0];if(e.track.kind==='audio')return attachAudio(id,s);renderTile(`r-${id}-${s.id}`,id,name||'Amico',s,false)};pc.onnegotiationneeded=async()=>{try{makingOffer[id]=true;await pc.setLocalDescription(await pc.createOffer());socket.emit('signal',{to:id,data:{description:pc.localDescription}})}catch(e){console.warn(e)}finally{makingOffer[id]=false}};return pc}
@@ -57,5 +166,5 @@ async function startCam(){openCall();if(camStream)return;try{camStream=await nav
 async function stopCam(){if(!camStream)return;let s=camStream;await removeStream(s);s.getTracks().forEach(t=>t.stop());camStream=null;camBtn.classList.remove('on');setSideButton('sideCamBtn',false);document.getElementById('local-cam')?.remove();focusFirst();sys('Webcam spenta');updateCallState()}
 async function startScreen(){openCall();if(screenStream)return;try{screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});screenStream.getTracks().forEach(t=>{addToAll(t,screenStream);t.onended=stopScreen});renderTile('local-screen','local','Il tuo schermo',screenStream,true);screenBtn.classList.add('on');setSideButton('sideScreenBtn',true);sys('Condivisione attiva');toast('Condivisione attiva','Stai trasmettendo lo schermo.');updateCallState()}catch(e){toast('Condivisione annullata','Non hai scelto uno schermo da condividere.','err')}}
 async function stopScreen(){if(!screenStream)return;let s=screenStream;await removeStream(s);s.getTracks().forEach(t=>t.stop());screenStream=null;screenBtn.classList.remove('on');setSideButton('sideScreenBtn',false);document.getElementById('local-screen')?.remove();focusFirst();sys('Condivisione chiusa');updateCallState()}
-function toggleMic(){micStream?stopMic():startMic()}function toggleCam(){camStream?stopCam():startCam()}function toggleScreen(){screenStream?stopScreen():startScreen()}async function stopAll(){if(micStream)await stopMic();if(camStream)await stopCam();if(screenStream)await stopScreen();Object.values(peers).forEach(p=>p.close());for(let k in peers)delete peers[k];document.querySelectorAll('[data-peer]').forEach(e=>e.remove());document.querySelectorAll('audio').forEach(e=>e.remove());tiles.innerHTML='';focused=null;focusFirst();voiceCard.classList.remove('active');call.classList.remove('active');updateCallState();sys('Sei uscito dalla chiamata')}
+function toggleMic(){micStream?stopMic():startMic()}function toggleCam(){camStream?stopCam():startCam()}function toggleScreen(){screenStream?stopScreen():startScreen()}async function stopAll(){if(micStream)await stopMic();if(camStream)await stopCam();if(screenStream)await stopScreen();Object.values(peers).forEach(p=>p.close());for(let k in peers)delete peers[k];document.querySelectorAll('[data-peer]').forEach(e=>e.remove());document.querySelectorAll('audio').forEach(e=>e.remove());tiles.innerHTML='';focused=null;focusFirst();voiceCard.classList.remove('active');call.classList.remove('active');inVoice=false;updateCallState();sys('Sei uscito dalla chiamata')}
 </script></body></html>
