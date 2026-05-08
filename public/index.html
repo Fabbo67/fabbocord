@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FabboCord Lite</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root{--bg:#313338;--dark:#1e1f22;--side:#2b2d31;--line:#202225;--mut:#949ba4;--txt:#f2f3f5;--input:#383a40;--blue:#5865f2;--green:#23a55a;--red:#f23f42}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Arial,Segoe UI,sans-serif}
+button,input{font:inherit}
+.app{height:100vh;display:grid;grid-template-columns:70px 240px minmax(0,1fr) 240px}
+.servers{background:var(--dark);padding:12px 0;display:flex;justify-content:center}
+.server{width:48px;height:48px;border-radius:16px;background:var(--blue);display:grid;place-items:center;font-weight:900}
+.side{background:var(--side);display:flex;flex-direction:column}
+.title{height:54px;padding:0 14px;display:flex;align-items:center;font-weight:800;border-bottom:1px solid var(--line)}
+.channels{flex:1;padding:12px 8px;overflow:auto}
+.cat{color:var(--mut);font-size:12px;font-weight:800;text-transform:uppercase;margin:12px 8px 6px}
+.channel{height:34px;border-radius:5px;padding:0 8px;display:flex;align-items:center;gap:8px;color:#ccc;cursor:pointer}
+.channel:hover,.channel.active{background:#404249;color:white}
+.voice-users{padding-left:26px}
+.vuser{height:30px;display:flex;align-items:center;gap:8px;color:#ddd;font-size:14px}
+.vuser .tag{margin-left:auto;font-size:10px;background:#f23f67;color:white;border-radius:10px;padding:2px 6px}
+.profile{height:58px;background:#232428;display:flex;align-items:center;gap:10px;padding:0 10px;cursor:pointer}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:white;background:var(--blue);flex-shrink:0}
+.main{display:flex;flex-direction:column;min-width:0}
+.top{height:48px;border-bottom:1px solid #282a2e;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-weight:800}
+.messages{flex:1;overflow:auto;padding:16px 0}
+.welcome{padding:14px 20px 22px;border-bottom:1px solid rgba(255,255,255,.06)}
+.welcome h2{margin:0 0 6px;font-size:26px}.welcome p{margin:0;color:var(--mut)}
+.msg{display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;padding:5px 20px}
+.msg:hover{background:rgba(0,0,0,.08)}
+.name{font-weight:800}.time{color:var(--mut);font-size:12px;margin-left:8px}.text{color:#dbdee1;word-break:break-word;margin-top:2px}
+.sys{text-align:center;color:var(--mut);font-size:12px;margin:8px}
+.composer{padding:0 16px 20px}
+.box{height:46px;background:var(--input);border-radius:8px;display:flex;gap:8px;align-items:center;padding:0 8px 0 14px}
+.box input{flex:1;background:transparent;border:0;outline:0;color:white}
+.box button,.login button,.modal button{border:0;background:var(--blue);color:white;border-radius:6px;padding:9px 12px;font-weight:800;cursor:pointer}
+.members{background:var(--side);padding:16px 8px;overflow:auto}
+.member{height:40px;border-radius:5px;display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:center;padding:0 8px;color:#ddd}
+.member:hover{background:#404249}.status{font-size:11px;color:var(--green)}
+.login,.modal{position:fixed;inset:0;background:rgba(30,31,34,.96);z-index:50;display:grid;place-items:center}
+.modal{display:none;background:rgba(0,0,0,.65)}
+.card{width:min(390px,calc(100% - 30px));background:#313338;padding:26px;border-radius:8px;text-align:center}
+.card input{width:100%;margin:10px 0;padding:12px;border-radius:5px;border:1px solid #111;background:#1e1f22;color:white}
+.color-row{display:flex;gap:8px;justify-content:center;margin:12px 0}.color{width:30px;height:30px;border-radius:50%;border:2px solid #555;cursor:pointer}
+.call{position:fixed;inset:0;background:#111214;z-index:20;display:none;grid-template-rows:48px 1fr 68px}
+.call.on{display:grid}.call-head{background:#1e1f22;border-bottom:1px solid #292b30;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.call-head button{background:#2b2d31;color:white;border:0;border-radius:6px;padding:8px 10px}
+.stage{min-height:0;display:grid;grid-template-columns:1fr 240px;gap:10px;padding:10px}
+.focus,.tile{background:#050607;border-radius:8px;display:grid;place-items:center;color:var(--mut);overflow:hidden;position:relative}
+.focus video{width:100%;height:100%;object-fit:contain}.tiles{display:flex;flex-direction:column;gap:8px;overflow:auto}
+.tile{height:135px;cursor:pointer;border:2px solid transparent}.tile.active{border-color:var(--blue)}.tile video{width:100%;height:100%;object-fit:cover}.tile.screen video{object-fit:contain}
+.label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.65);border-radius:5px;padding:4px 7px;font-size:12px}
+.controls{background:#1e1f22;border-top:1px solid #292b30;display:flex;align-items:center;justify-content:center;gap:10px}
+.controls button{border:0;border-radius:999px;background:#3b3d44;color:white;font-weight:800;padding:12px 16px}.controls .on{background:var(--green)}.controls .red{background:var(--red)}
+audio{display:none}
+@media(max-width:900px){.app{grid-template-columns:64px 220px 1fr}.members{display:none}.stage{grid-template-columns:1fr}.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:210px}}
+@media(max-width:680px){.app{grid-template-columns:1fr}.servers,.side{display:none}}
+</style>
+</head>
+<body>
+<div class="login" id="login">
+  <div class="card">
+    <h1>FabboCord Lite</h1>
+    <p style="color:#aaa">Versione leggera per server da 512 MB.</p>
+    <div class="av" id="loginAv" style="margin:0 auto 10px">U</div>
+    <input id="nameInput" placeholder="Nome utente">
+    <div class="color-row" id="colors"></div>
+    <button onclick="join()">Entra</button>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <h2>Profilo</h2>
+    <div class="av" id="editAv" style="margin:0 auto 10px">U</div>
+    <input id="editName">
+    <div class="color-row" id="editColors"></div>
+    <button onclick="saveProfile()">Salva</button>
+    <button style="background:#4e5058;margin-top:8px" onclick="modal.style.display='none'">Annulla</button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="servers"><div class="server">S</div></aside>
+  <aside class="side">
+    <div class="title">server</div>
+    <div class="channels">
+      <div class="cat">Canali testuali</div>
+      <div class="channel active"># generale</div>
+      <div class="cat">Canali vocali</div>
+      <div class="channel" onclick="openCall()">🔊 Vocale</div>
+      <div class="voice-users" id="voiceUsers"></div>
+    </div>
+    <div class="profile" onclick="openProfile()">
+      <div class="av" id="profileAv">U</div>
+      <div><b id="profileName">Utente</b><br><small style="color:#aaa">Modifica profilo</small></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top"><span># generale</span><span style="color:#aaa;font-size:13px">/help /meme /game</span></div>
+    <section class="messages" id="messages">
+      <div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div>
+    </section>
+    <div class="composer"><div class="box"><input id="msgInput" placeholder="Scrivi..." onkeydown="if(event.key==='Enter')sendMsg()"><button onclick="sendMsg()">Invia</button></div></div>
+  </main>
+
+  <aside class="members">
+    <div class="cat" id="onlineTitle">ONLINE — 0</div>
+    <div id="members"></div>
+  </aside>
+</div>
+
+<section class="call" id="call">
+  <div class="call-head"><b>🔊 Vocale</b><button onclick="closeCall()">Torna alla chat</button></div>
+  <div class="stage"><div class="focus" id="focus">Clicca un riquadro per ingrandire</div><div class="tiles" id="tiles"></div></div>
+  <div class="controls">
+    <button id="micBtn" onclick="toggleMic()">Mic</button>
+    <button id="camBtn" onclick="toggleCam()">Cam</button>
+    <button id="screenBtn" onclick="toggleScreen()">Schermo</button>
+    <button class="red" onclick="leaveVoice()">Esci</button>
+  </div>
+</section>
+
+<script>
+const socket=io();
+let myId=null,users=[],peers={},makingOffer={},focused=null;
+let mic=null,cam=null,screen=null,inVoice=false;
+let profile=JSON.parse(localStorage.getItem("fc_lite_profile")||"{}");
+let myName=profile.name||"Utente",myColor=profile.color||"#5865f2";
+const colors=["#5865f2","#A1193F","#23a55a","#f23f42","#fee75c","#eb459e","#57f287"];
+const rtc={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function ini(n){return String(n||"?").slice(0,2).toUpperCase()}
+function now(){return new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
+function av(name,color,cls="av"){return `<div class="${cls}" style="background:${color||"#5865f2"}">${esc(ini(name))}</div>`}
+function saveLocal(){localStorage.setItem("fc_lite_profile",JSON.stringify({name:myName,color:myColor}))}
+function paintProfile(){profileName.textContent=myName;profileAv.textContent=ini(myName);profileAv.style.background=myColor;loginAv.textContent=ini(nameInput.value||myName);loginAv.style.background=myColor;editAv.textContent=ini(editName.value||myName);editAv.style.background=myColor}
+function colorButtons(target){target.innerHTML=colors.map(c=>`<button class="color" style="background:${c}" onclick="setColor('${c}')"></button>`).join("")}
+function setColor(c){myColor=c;paintProfile()}
+function boot(){nameInput.value=myName;editName.value=myName;colorButtons(colorsEl);colorButtons(editColors);paintProfile()}
+const colorsEl=document.getElementById("colors");
+
+function join(){myName=(nameInput.value||"Utente").trim().slice(0,24)||"Utente";saveLocal();paintProfile();login.style.display="none";socket.emit("join",{name:myName,color:myColor});bot("Sei entrato nella versione Lite.")}
+function openProfile(){editName.value=myName;paintProfile();modal.style.display="grid"}
+function saveProfile(){myName=(editName.value||myName).trim().slice(0,24)||"Utente";saveLocal();paintProfile();socket.emit("profile",{name:myName,color:myColor});modal.style.display="none"}
+
+function add(name,text,time=now(),color="#5865f2"){messages.insertAdjacentHTML("beforeend",`<div class="msg">${av(name,color,"av")}<div><span class="name">${esc(name)}</span><span class="time">${time}</span><div class="text">${text}</div></div></div>`);messages.scrollTop=messages.scrollHeight}
+function bot(t){add("FabboBot",t,now(),"#5865f2")}
+function sys(t){messages.insertAdjacentHTML("beforeend",`<div class="sys">${esc(t)}</div>`);messages.scrollTop=messages.scrollHeight}
+function sendMsg(){let t=msgInput.value.trim();if(!t)return;socket.emit("message",t);msgInput.value=""}
+function botCmd(t){t=t.toLowerCase();if(t==="/help")bot("Comandi: /help /meme /game");if(t==="/meme")bot("Lite ma funziona 😭");if(t==="/game")bot("Mic + cam + schermo 🎮")}
+
+function renderUsers(){onlineTitle.textContent=`ONLINE — ${users.length}`;members.innerHTML="";voiceUsers.innerHTML="";
+users.forEach(u=>{members.insertAdjacentHTML("beforeend",`<div class="member">${av(u.name,u.color)}<span>${esc(u.name)}${u.id===myId?" (tu)":""}</span><span class="status">${u.inVoice?"VOCE":"●"}</span></div>`);
+if(u.inVoice)voiceUsers.insertAdjacentHTML("beforeend",`<div class="vuser">${av(u.name,u.color,"av")}<span>${esc(u.name)}${u.id===myId?" (tu)":""}</span>${u.screen?'<span class="tag">LIVE</span>':""}</div>`)})}
+function state(){socket.emit("voice",{inVoice,mic:!!mic,cam:!!cam,screen:!!screen})}
+function openCall(){inVoice=true;call.classList.add("on");state()}
+function closeCall(){call.classList.remove("on");state()}
+
+socket.on("me",id=>myId=id);
+socket.on("users",list=>{users=list||[];renderUsers();users.forEach(u=>{if(u.id!==myId&&hasMedia())peer(u.id,u.name)})});
+socket.on("system",sys);
+socket.on("message",m=>{add(m.name,esc(m.text),m.time,m.color);if(m.id===myId)botCmd(m.text)});
+socket.on("user-left",id=>{if(peers[id]){peers[id].close();delete peers[id]}document.querySelectorAll(`[data-peer="${id}"]`).forEach(e=>e.remove());if(focused&&!document.getElementById(focused))focusFirst()});
+socket.on("signal",async({from,name,data})=>{let pc=peer(from,name);try{if(data.description){let collision=data.description.type==="offer"&&(makingOffer[from]||pc.signalingState!=="stable"),polite=myId&&from>myId;if(collision&&!polite)return;if(collision)await Promise.all([pc.setLocalDescription({type:"rollback"}),pc.setRemoteDescription(data.description)]);else await pc.setRemoteDescription(data.description);if(data.description.type==="offer"){await pc.setLocalDescription(await pc.createAnswer());socket.emit("signal",{to:from,data:{description:pc.localDescription}})}}if(data.candidate)await pc.addIceCandidate(data.candidate).catch(()=>{})}catch(e){console.warn(e)}});
+
+function hasMedia(){return mic||cam||screen}
+function allTracks(){let a=[];if(mic)a.push(...mic.getTracks());if(cam)a.push(...cam.getTracks());if(screen)a.push(...screen.getTracks());return a}
+function streamOf(t){if(mic&&mic.getTracks().includes(t))return mic;if(cam&&cam.getTracks().includes(t))return cam;return screen}
+function peer(id,name){if(peers[id])return peers[id];let pc=new RTCPeerConnection(rtc);peers[id]=pc;makingOffer[id]=false;allTracks().forEach(t=>pc.addTrack(t,streamOf(t)));pc.onicecandidate=e=>{if(e.candidate)socket.emit("signal",{to:id,data:{candidate:e.candidate}})};pc.ontrack=e=>{openCall();let s=e.streams[0];if(e.track.kind==="audio")return audio(id,s);tile(`r-${id}-${s.id}`,id,name||"Amico",s,false)};pc.onnegotiationneeded=async()=>{try{makingOffer[id]=true;await pc.setLocalDescription(await pc.createOffer());socket.emit("signal",{to:id,data:{description:pc.localDescription}})}catch(e){}finally{makingOffer[id]=false}};return pc}
+function addTrackAll(track,stream){users.forEach(u=>{if(u.id===myId)return;let pc=peer(u.id,u.name);if(!pc.getSenders().some(s=>s.track===track))pc.addTrack(track,stream)})}
+async function removeStream(s){if(!s)return;let ts=s.getTracks();Object.values(peers).forEach(pc=>pc.getSenders().forEach(x=>{if(x.track&&ts.includes(x.track))pc.removeTrack(x)}))}
+function audio(id,s){let a=document.getElementById("a-"+id+"-"+s.id);if(!a){a=document.createElement("audio");a.id="a-"+id+"-"+s.id;a.dataset.peer=id;a.autoplay=true;document.body.appendChild(a)}a.srcObject=s;a.play().catch(()=>{})}
+function tile(id,peerId,label,stream,isScreen){let t=document.getElementById(id);if(!t){t=document.createElement("div");t.id=id;t.dataset.peer=peerId;t.className="tile";t.onclick=()=>focus(id);tiles.appendChild(t)}t.classList.toggle("screen",isScreen);t.innerHTML=`<video autoplay playsinline ${peerId==="local"?"muted":""}></video><span class="label">${esc(label)}</span>`;t.querySelector("video").srcObject=stream;if(!focused)focus(id)}
+function focus(id){let t=document.getElementById(id);if(!t)return;focused=id;document.querySelectorAll(".tile").forEach(x=>x.classList.toggle("active",x.id===id));let v=t.querySelector("video"),lab=t.querySelector(".label")?.textContent||"";focusEl.innerHTML=`<video autoplay playsinline ${t.dataset.peer==="local"?"muted":""}></video><span class="label">${esc(lab)}</span>`;focusEl.querySelector("video").srcObject=v.srcObject}
+const focusEl=document.getElementById("focus");
+function focusFirst(){focused=null;let t=document.querySelector(".tile");if(t)focus(t.id);else focusEl.textContent="Clicca un riquadro per ingrandire"}
+
+async function toggleMic(){mic?stopMic():startMic()}
+async function startMic(){openCall();if(mic)return;try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});mic.getTracks().forEach(t=>{addTrackAll(t,mic);t.onended=stopMic});micBtn.classList.add("on");state()}catch(e){alert("Microfono bloccato")}}
+async function stopMic(){let s=mic;if(!s)return;await removeStream(s);s.getTracks().forEach(t=>t.stop());mic=null;micBtn.classList.remove("on");state()}
+async function toggleCam(){cam?stopCam():startCam()}
+async function startCam(){openCall();if(cam)return;try{cam=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:360},frameRate:{ideal:15,max:20}},audio:false});cam.getTracks().forEach(t=>{addTrackAll(t,cam);t.onended=stopCam});tile("local-cam","local","La tua webcam",cam,false);camBtn.classList.add("on");state()}catch(e){alert("Webcam bloccata")}}
+async function stopCam(){let s=cam;if(!s)return;await removeStream(s);s.getTracks().forEach(t=>t.stop());cam=null;camBtn.classList.remove("on");document.getElementById("local-cam")?.remove();focusFirst();state()}
+async function toggleScreen(){screen?stopScreen():startScreen()}
+async function startScreen(){openCall();if(screen)return;try{screen=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:15,max:20}},audio:true});screen.getTracks().forEach(t=>{addTrackAll(t,screen);t.onended=stopScreen});tile("local-screen","local","Il tuo schermo",screen,true);screenBtn.classList.add("on");state()}catch(e){}}
+async function stopScreen(){let s=screen;if(!s)return;await removeStream(s);s.getTracks().forEach(t=>t.stop());screen=null;screenBtn.classList.remove("on");document.getElementById("local-screen")?.remove();focusFirst();state()}
+async function leaveVoice(){if(mic)await stopMic();if(cam)await stopCam();if(screen)await stopScreen();Object.values(peers).forEach(p=>p.close());peers={};document.querySelectorAll("[data-peer]").forEach(e=>e.remove());document.querySelectorAll("audio").forEach(e=>e.remove());tiles.innerHTML="";inVoice=false;call.classList.remove("on");state();focusFirst()}
+
+boot();
+</script>
+</body>
+</html>
