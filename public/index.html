@@ -84,15 +84,137 @@
   height:34px;
 }
 
+
+/* Discord profile rendering fix */
+.msg{
+  grid-template-columns:40px minmax(0,1fr) !important;
+}
+.msgav{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#A1193F,var(--brand));
+  color:white;
+  font-weight:900;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.msgav img,
+.memberav img,
+.voiceav img,
+.av img,
+.miniav img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
+  display:block;
+}
+.discord-member{
+  display:grid !important;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  min-height:44px;
+  padding:4px 8px;
+}
+.memberav{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#A1193F,var(--brand));
+  color:white;
+  font-weight:900;
+  overflow:hidden;
+  font-size:12px;
+}
+.member-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#dbdee1;
+}
+.member-status.live{
+  background:#f23f67;
+  color:white;
+  border-radius:999px;
+  padding:2px 7px;
+  font-size:10px;
+  font-weight:900;
+}
+.online-dot{
+  color:#23a55a !important;
+  font-size:14px !important;
+}
+.voice-list{
+  padding:4px 0 8px 24px !important;
+}
+.discord-voice-user{
+  display:grid !important;
+  grid-template-columns:26px minmax(0,1fr) auto auto auto;
+  align-items:center;
+  gap:7px;
+  min-height:34px;
+  padding:3px 5px 3px 0;
+  border-radius:4px;
+  color:#dbdee1;
+}
+.discord-voice-user:hover{
+  background:#35373c;
+}
+.voiceav{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#A1193F,var(--brand));
+  color:white;
+  font-weight:900;
+  overflow:hidden;
+  font-size:10px;
+}
+.voice-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#dbdee1;
+}
+.voice-icon{
+  font-size:12px;
+  opacity:.9;
+}
+.voice-icon.muted{
+  opacity:.5;
+}
+.members{
+  display:block !important;
+  background:#2b2d31 !important;
+}
+
 </style></head><body>
-<div class="login" id="login"><div class="login-card"><h1>Bentornato su FabboCord</h1><p style="color:#949ba4">Link privato per i tuoi amici.</p><div class="avatar-preview" id="loginAvatar">F</div><input id="nameInput" value="fabbo67"><input type="file" id="avatarInput" accept="image/*"><button onclick="join()">Entra</button></div></div>
+<div class="login" id="login"><div class="login-card"><h1>Entra in FabboCord</h1><p style="color:#949ba4">Scegli il tuo nome una volta: resterà salvato su questo dispositivo.</p><div class="avatar-preview" id="loginAvatar">F</div><input id="nameInput" value="Utente"><input type="file" id="avatarInput" accept="image/*"><button onclick="join()">Entra</button></div></div>
 <div class="profile-modal" id="profileModal"><div class="modal-card"><h2>Modifica profilo</h2><div class="avatar-preview" id="editAvatar">F</div><input id="editName" placeholder="Nome"><input type="file" id="editAvatarInput" accept="image/*"><div class="modal-actions"><button class="ghost" onclick="closeProfile()">Annulla</button><button onclick="saveProfile()">Salva</button></div></div></div>
 <div class="toast-wrap" id="toastWrap"></div>
-<div class="app"><aside class="serverbar"><div class="server">S</div></aside><aside class="guild"><div class="head"><span class="lock">🔒</span><div><div>server</div><small style="color:#949ba4;font-weight:400">Imposta uno stato del canale ✎</small></div></div><div class="channels"><div class="cat">Canali testuali</div><div class="channel active"># generale</div><div class="cat">Canali vocali</div><div class="channel" onclick="openCall()">🔊 Vocale</div><div class="voice-list" id="voiceList"></div><div class="voice-card" id="voiceCard"><div class="voice-connected"><div class="signal-icon">≋</div><div><div class="voice-green">Connesso al canale vocale</div><div class="voice-room">🔊 Vocale</div></div><button class="mini-icon" onclick="stopAll()" title="Disconnetti">☎</button></div><div class="voice-actions"><button id="sideCamBtn" onclick="toggleCam()" title="Webcam">📷</button><button id="sideScreenBtn" onclick="toggleScreen()" title="Condividi schermo">🖥️</button><button onclick="openCall()" title="Apri chiamata">✦</button><button id="sideMicBtn" onclick="toggleMic()" title="Microfono">🎙️</button></div></div></div><div class="profile" onclick="openProfile()"><div class="av" id="pav">F</div><div><b id="pname">fabbo67</b><br><small style="color:#949ba4">Modifica profilo</small></div></div></aside><main class="chat"><div class="top"><span># generale</span><span style="color:#949ba4;font-size:13px">/help · /meme · /game</span></div><section class="messages" id="messages"><div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div></section><div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">Invia</button></div></div></main><aside class="members"><div class="cat" id="mt">Online — 0</div><div id="ml"></div></aside></div>
+<div class="app"><aside class="serverbar"><div class="server">S</div></aside><aside class="guild"><div class="head"><span class="lock">🔒</span><div><div>server</div><small style="color:#949ba4;font-weight:400">Imposta uno stato del canale ✎</small></div></div><div class="channels"><div class="cat">Canali testuali</div><div class="channel active"># generale</div><div class="cat">Canali vocali</div><div class="channel" onclick="openCall()">🔊 Vocale</div><div class="voice-list" id="voiceList"></div><div class="voice-card" id="voiceCard"><div class="voice-connected"><div class="signal-icon">≋</div><div><div class="voice-green">Connesso al canale vocale</div><div class="voice-room">🔊 Vocale</div></div><button class="mini-icon" onclick="stopAll()" title="Disconnetti">☎</button></div><div class="voice-actions"><button id="sideCamBtn" onclick="toggleCam()" title="Webcam">📷</button><button id="sideScreenBtn" onclick="toggleScreen()" title="Condividi schermo">🖥️</button><button onclick="openCall()" title="Apri chiamata">✦</button><button id="sideMicBtn" onclick="toggleMic()" title="Microfono">🎙️</button></div></div></div><div class="profile" onclick="openProfile()"><div class="av" id="pav">F</div><div><b id="pname">Utente</b><br><small style="color:#949ba4">Modifica profilo</small></div></div></aside><main class="chat"><div class="top"><span># generale</span><span style="color:#949ba4;font-size:13px">/help · /meme · /game</span></div><section class="messages" id="messages"><div class="welcome"><h2>Benvenuto in #generale</h2><p>Chat privata con gli amici.</p></div></section><div class="composer"><div class="box"><input id="messageInput" placeholder="Scrivi in #generale" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">Invia</button></div></div></main><aside class="members"><div class="cat" id="mt">Online — 0</div><div id="ml"></div></aside></div>
 <section class="call" id="call"><div class="calltop"><b>🔊 Vocale</b><button onclick="closeCall()">Torna alla chat</button></div><div class="stage"><div class="focus" id="focus">Clicca su una webcam o condivisione per ingrandirla</div><div class="tiles" id="tiles"></div></div><div class="controls"><button id="micBtn" onclick="toggleMic()">🎙️ Mic</button><button id="camBtn" onclick="toggleCam()">📷 Cam</button><button id="screenBtn" class="brand" onclick="toggleScreen()">🖥️ Schermo</button><button class="red" onclick="stopAll()">Esci</button></div></section>
 <script>
-const socket=io();let myId=null,myName=localStorage.getItem('fc_name')||'fabbo67',myAvatar=localStorage.getItem('fc_avatar')||'',users=[],micStream=null,camStream=null,screenStream=null,peers={},makingOffer={},focused=null,inVoice=false;const rtc={iceServers:[{urls:'stun:stun.l.google.com:19302'}]},messages=document.getElementById('messages');
-nameInput.value=myName;renderAvatar(loginAvatar,myName,myAvatar);
+const socket=io();
+let savedProfile={};
+try{savedProfile=JSON.parse(localStorage.getItem('fc_profile')||'{}')}catch(e){savedProfile={}}
+let myId=null,
+myName=savedProfile.name||localStorage.getItem('fc_name')||'Utente',
+myAvatar=savedProfile.avatar||localStorage.getItem('fc_avatar')||'',
+users=[],micStream=null,camStream=null,screenStream=null,peers={},makingOffer={},focused=null,inVoice=false;const rtc={iceServers:[{urls:'stun:stun.l.google.com:19302'}]},messages=document.getElementById('messages');
+nameInput.value=myName;
+renderAvatar(loginAvatar,myName,myAvatar);
+nameInput.addEventListener('input',()=>renderAvatar(loginAvatar,nameInput.value,myAvatar));
 function safe(t){return String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}function ini(n){return String(n||'?').trim().slice(0,2).toUpperCase()}function now(){return new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}
 function renderAvatar(el,name,avatar){el.innerHTML=avatar?`<img src="${avatar}">`:safe(ini(name))}
 function toast(title,msg,type=''){let el=document.createElement('div');el.className='toast '+type;el.innerHTML=`<b>${safe(title)}</b><p>${safe(msg)}</p>`;toastWrap.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),220)},4200)}
@@ -101,12 +223,18 @@ avatarInput.onchange=e=>readImage(e.target.files[0],data=>{myAvatar=data;renderA
 editAvatarInput.onchange=e=>readImage(e.target.files[0],data=>{myAvatar=data;renderAvatar(editAvatar,editName.value,myAvatar)})
 function updateCallState(){socket.emit('call-state',{inVoice:!!inVoice,mic:!!micStream,cam:!!camStream,screen:!!screenStream})}
 function setSideButton(id,on){let el=document.getElementById(id);if(el)el.classList.toggle('on',on)}
-function join(){myName=nameInput.value.trim()||'Utente';localStorage.setItem('fc_name',myName);localStorage.setItem('fc_avatar',myAvatar);login.style.display='none';pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('join',{name:myName,avatar:myAvatar});bot('Server rinominato in <b>server</b>. Ora chat, avatar profilo e membri online sono sistemati.')}
+function join(){myName=nameInput.value.trim()||'Utente';localStorage.setItem('fc_name',myName);
+localStorage.setItem('fc_avatar',myAvatar);
+localStorage.setItem('fc_profile',JSON.stringify({name:myName,avatar:myAvatar}));
+login.style.display='none';pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('join',{name:myName,avatar:myAvatar});bot('Server rinominato in <b>server</b>. Ora avatar e nomi profilo si vedono in chat, online e vocale.')}
 function openProfile(){editName.value=myName;renderAvatar(editAvatar,myName,myAvatar);profileModal.style.display='grid'}
 function closeProfile(){profileModal.style.display='none'}
-function saveProfile(){myName=editName.value.trim()||myName;localStorage.setItem('fc_name',myName);localStorage.setItem('fc_avatar',myAvatar);pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('profile-update',{name:myName,avatar:myAvatar});closeProfile();toast('Profilo aggiornato','Nome e immagine profilo salvati.')}
+function saveProfile(){myName=editName.value.trim()||myName;localStorage.setItem('fc_name',myName);
+localStorage.setItem('fc_avatar',myAvatar);
+localStorage.setItem('fc_profile',JSON.stringify({name:myName,avatar:myAvatar}));
+pname.textContent=myName;renderAvatar(pav,myName,myAvatar);socket.emit('profile-update',{name:myName,avatar:myAvatar});closeProfile();toast('Profilo aggiornato','Nome e immagine profilo salvati.')}
 function chatAvatarHtml(name,avatar){
-  return avatar ? `<div class="av"><img src="${avatar}"></div>` : `<div class="av">${safe(ini(name))}</div>`;
+  return avatarHtml(name,avatar,'msgav');
 }
 function add(name,text,time=now(),avatar=''){
   messages.insertAdjacentHTML('beforeend',`<div class="msg">${chatAvatarHtml(name,avatar)}<div><span class="name">${safe(name)}</span><span class="time">${safe(time)}</span><div class="text">${text}</div></div></div>`);
@@ -115,35 +243,41 @@ function add(name,text,time=now(),avatar=''){
 function bot(t){add('FabboBot',t,now(),'')}
 function sys(t){messages.insertAdjacentHTML('beforeend',`<div class="sys">${safe(t)}</div>`);messages.scrollTop=messages.scrollHeight}
 function sendMessage(){let i=messageInput,t=i.value.trim();if(!t)return;socket.emit('message',t);i.value=''}function handleBot(t){t=t.toLowerCase();if(t==='/help')bot('Clicca sul profilo in basso a sinistra per cambiare nome/avatar.');if(t==='/meme')bot('Ora il server si chiama server, fantasia 100 😭');if(t==='/game')bot('Mic + cam + screen e si gioca 🎮')}
-function userAvatarHtml(u,cls='miniav'){return `<span class="${cls}">${u.avatar?`<img src="${u.avatar}">`:safe(ini(u.name))}</span>`}
+function avatarHtml(name,avatar,cls='miniav'){
+  return `<span class="${cls}">${avatar?`<img src="${avatar}" alt="">`:safe(ini(name))}</span>`;
+}
+function userAvatarHtml(u,cls='miniav'){
+  return avatarHtml(u.name,u.avatar,cls);
+}">${u.avatar?`<img src="${u.avatar}">`:safe(ini(u.name))}</span>`}
 function renderUsers(){
-  mt.textContent=`Online — ${users.length}`;
+  mt.textContent=`ONLINE — ${users.length}`;
   ml.innerHTML='';
   voiceList.innerHTML='';
 
   users.forEach(u=>{
-    const status = (u.inVoice||u.inCall) ? '<span class="member-status">IN VOCALE</span>' : '<span class="member-status online-dot">●</span>';
+    const status = (u.inVoice||u.inCall) ? '<span class="member-status live">IN VOCALE</span>' : '<span class="member-status online-dot">●</span>';
     ml.insertAdjacentHTML('beforeend',`
-      <div class="member">
-        ${userAvatarHtml(u,'av')}
+      <div class="member discord-member">
+        ${userAvatarHtml(u,'memberav')}
         <span class="member-name">${safe(u.name)}${u.id===myId?' (tu)':''}</span>
         ${status}
       </div>
     `);
   });
 
-  let inCall=users.filter(u=>u.inVoice||u.inCall);
-  if(inCall.length===0){
-    voiceList.innerHTML='<div class="voice-empty">Nessuno in vocale</div>';
+  const inVoiceUsers=users.filter(u=>u.inVoice||u.inCall);
+  if(inVoiceUsers.length===0){
+    voiceList.innerHTML='';
+    return;
   }
 
-  inCall.forEach(u=>{
-    const live = u.screen ? '<span class="badge">IN ONDA</span>' : '';
+  inVoiceUsers.forEach(u=>{
+    const mic = u.mic ? '<span class="voice-icon">🎙️</span>' : '<span class="voice-icon muted">🔇</span>';
     const cam = u.cam ? '<span class="code">CAM</span>' : '';
-    const mic = u.mic ? '<span class="voice-mic">🎙️</span>' : '<span class="voice-mic muted">🔇</span>';
+    const live = u.screen ? '<span class="badge">IN ONDA</span>' : '';
     voiceList.insertAdjacentHTML('beforeend',`
-      <div class="voice-user discord-user">
-        ${userAvatarHtml(u)}
+      <div class="voice-user discord-voice-user">
+        ${userAvatarHtml(u,'voiceav')}
         <span class="voice-name">${safe(u.name)}${u.id===myId?' (tu)':''}</span>
         ${mic}${cam}${live}
       </div>
